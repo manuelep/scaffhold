@@ -14,6 +14,9 @@
     - .gitignore
 7. init the local new git repository
 8. update the remote repository (if given)
+
+TODO:
+  - https://stackoverflow.com/a/246128/1039510
 '
 
 version="1.0"
