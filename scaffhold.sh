@@ -14,9 +14,6 @@
     - .gitignore
 7. init the local new git repository
 8. update the remote repository (if given)
-
-TODO:
-  - https://stackoverflow.com/a/246128/1039510
 '
 
 version="1.0"
@@ -43,6 +40,9 @@ while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
     ;;
 esac; shift; done
 if [[ "$1" == '--' ]]; then shift; fi
+
+# Courtesy of: https://stackoverflow.com/a/246128
+SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 SRC="https://github.com/web2py/web2py.git"
 scaffhold="welcome"
@@ -74,21 +74,24 @@ cd -
 echo "[MSG] 7. New repository initialized"
 
 echo "[MSG] 5. and 6. From welcome to my scaffholding app"
-if [[ -d resources ]]; then
-    rsync -av resources/* $scaffhold/
+resources="$SCRIPT_PATH/resources"
+if [[ -d $resources ]]; then
+    rsync -av $resources/ $scaffhold/
     cd $scaffhold
     git add .
     git commit -am "scaffhold"
     git tag -a v0.0.2 -m "scaffhold"
-fi
 
-echo "[MSG] Updating remote repository"
-if [[ -n $repo ]]; then
-    git remote add origin $repo
-    git push -u origin master
-fi
+    echo "[MSG] Updating remote repository"
+    if [[ -n $repo ]]; then
+        git remote add origin $repo
+        git push -u origin master
+    fi
 
-cd -
+    cd -
+else
+    echo "[WARNING] $resources NOT found"
+fi
 
 if [[ -n $name ]]; then
     echo "[MSG] Renaming project to $name"
