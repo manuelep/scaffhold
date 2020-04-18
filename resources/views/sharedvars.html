@@ -1,0 +1,25 @@
+{{block shared}}
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.1/URI.js"></script>
+<script type="text/javascript">
+
+// var parent = "{{#=request.env.http_x_forwarded_host or request.env.http_host}}";
+// var root = "{{#=request.application}}"
+
+function web2py_url (args, vars, scheme, other_host) {
+    /*
+    args @string||list : The path divided by each component.
+    vars       @object : Some variables to add to query string (DO NOT USE _signature KEY).
+    scheme     @string : Can be 'http:' or 'https:'.
+    other_host @string : Other web2py host can be called.
+    warning: _signature is a reserved vars for safe URL.
+     */
+    args = args||'';
+    var this_host = "{{=request.env.http_x_forwarded_host or request.env.http_host}}";
+    var _url = `{{=safeio.url(c="c", f="f", scheme='${scheme||window.location.protocol}', host='${other_host||this_host}').replace('/c/f', '').replace('://', '//')}}`;
+    var URL = URI(_url);
+    URL.addSearch(vars||{});
+    if ( ! Array.isArray(args) ) {args = [args];};
+    URL.path(URI.joinPaths.apply(URL.path(), args));
+    return URL.toString();
+};
+</script>{{end}}

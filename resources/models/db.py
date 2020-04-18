@@ -87,55 +87,8 @@ response.form_label_separator = ''
 # response.optimize_js = 'concat,minify,inline'
 
 # -------------------------------------------------------------------------
-# (optional) static assets folder versioning
-# -------------------------------------------------------------------------
-response.static_version = '0.0.0'
-
-# -------------------------------------------------------------------------
-# Here is sample code if you need for
-# - email capabilities
-# - authentication (registration, login, logout, ... )
-# - authorization (role based authorization)
-# - services (xml, csv, json, xmlrpc, jsonrpc, amf, rss)
-# - old style crud actions
-# (more options discussed in gluon/tools.py)
-# -------------------------------------------------------------------------
-
-
-def manage_auth():
-
-    if configuration.get('CAS.enabled', False):
-        cas_url = configuration.get('CAS.url', URL(
-            configuration.take('CAS.application'),
-            configuration.get('CAS.controller', 'default'),
-            configuration.get('CAS.function', 'user'),
-            args = configuration.get('CAS.args', 'cas').split(","),
-            host = configuration.get('CAS.host', request.host),
-            scheme = configuration.get('CAS.scheme', request.env.wsgi_url_scheme),
-            port = configuration.get('CAS.port', request.env.server_port)
-        ))
-    else:
-        cas_url = None
-
-    # host names must be a list of allowed host names (glob syntax allowed)
-    auth = Auth(db, host_names = configuration.get('host.names'),
-        cas_provider = cas_url
-    )
-
-    # -------------------------------------------------------------------------
-    # create all tables needed by auth, maybe add a list of extra fields
-    # -------------------------------------------------------------------------
-    auth.settings.extra_fields['auth_user'] = []
-    auth.define_tables(username=False, signature=False)
-
-    current.auth = auth
-
-    return auth
-
-# -------------------------------------------------------------------------
 # Scheduler configuration
 # -------------------------------------------------------------------------
-
 if configuration.get('scheduler.enabled'):
     from gluon.scheduler import Scheduler, HEARTBEAT
     from swissknife.timeformat import prettydelta
@@ -156,3 +109,109 @@ if configuration.get('scheduler.enabled'):
     sdb.scheduler_task.task_name.readable = False
     sdb.scheduler_task.retry_failed.readable = False
     sdb.scheduler_task.uuid.readable = False
+
+
+# -------------------------------------------------------------------------
+# Access and authorization configuration
+# -------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+# Here is sample code if you need for
+# - email capabilities
+# - authentication (registration, login, logout, ... )
+# - authorization (role based authorization)
+# - services (xml, csv, json, xmlrpc, jsonrpc, amf, rss)
+# - old style crud actions
+# (more options discussed in gluon/tools.py)
+# -------------------------------------------------------------------------
+
+if configuration.get('CAS.enabled', False):
+    cas_url = configuration.get('CAS.url', URL(
+        configuration.take('CAS.application'),
+        configuration.get('CAS.controller', 'default'),
+        configuration.get('CAS.function', 'user'),
+        args = configuration.get('CAS.args', 'cas').split(","),
+        host = configuration.get('CAS.host', request.host),
+        scheme = configuration.get('CAS.scheme', request.env.wsgi_url_scheme),
+        port = configuration.get('CAS.port', request.env.server_port)
+    ))
+else:
+    cas_url = None
+
+# -------------------------------------------------------------------------
+# auth
+# -------------------------------------------------------------------------
+# host names must be a list of allowed host names (glob syntax allowed)
+auth = Auth(
+    db,
+    host_names = configuration.get('host.names'),
+    cas_provider = cas_url
+)
+
+# -------------------------------------------------------------------------
+# create all tables needed by auth, maybe add a list of extra fields.
+# This operation must be done _after_ the auth object is instantiates but
+# _before_ the auth tables definition.
+# -------------------------------------------------------------------------
+# auth.settings.extra_fields['auth_user'] = []
+# auth.settings.extra_fields['auth_group'] = []
+
+# -------------------------------------------------------------------------
+# auth table definition
+# Just define earlier in the code the variable custom_auth_table_definition_required
+# as False, in this way the define_tables method will be run later at the beginning
+# of the settings.py file when your customizations has been performed in a mdel
+# file that will be loaded between this one and settings.py.
+# -------------------------------------------------------------------------
+if 'auth' in vars():
+    auth_define_table = lambda: auth.define_tables(
+        username = plugins.auth.get('username', configuration.get("app.auth_default_username", False)),
+        signature = plugins.auth.get('signature', configuration.get("app.auth_default_signature", False))
+    )
+    try:
+        assert custom_auth_table_definition_required
+    except (NameError, AssertionError):
+        auth_define_table()
+
+    # -------------------------------------------------------------------------
+    # configure auth policy
+    # -------------------------------------------------------------------------
+    auth.settings.registration_requires_verification = configuration.get("app.registration_requires_verification", False)
+    auth.settings.registration_requires_approval = configuration.get("app.registration_requires_approval", False)
+    auth.settings.reset_password_requires_verification = configuration.get("app.reset_password_requires_verification", True)
+
+    if configuration.get('CAS.enabled', False):
+        auth.settings.logout_next = URL(
+            configuration.take('CAS.application'),
+            'default',
+            'index',
+            host = configuration.get('CAS.host', request.host),
+            scheme = configuration.get('CAS.scheme', request.env.wsgi_url_scheme),
+            port = configuration.get('CAS.port', request.env.server_port)
+        )
+
+# -------------------------------------------------------------------------
+# (optional) static assets folder versioning
+# -------------------------------------------------------------------------
+response.static_version = '0.0.0'
+
+# -------------------------------------------------------------------------
+# Define your tables below (or better in another model file) for example
+#
+# >>> db.define_table('mytable', Field('myfield', 'string'))
+#
+# Fields can be 'string','text','password','integer','double','boolean'
+#       'date','time','datetime','blob','upload', 'reference TABLENAME'
+# There is an implicit 'id integer autoincrement' field
+# Consult manual for more options, validators, etc.
+#
+# More API examples for controllers:
+#
+# >>> db.mytable.insert(myfield='value')
+# >>> rows = db(db.mytable.myfield == 'value').select(db.mytable.ALL)
+# >>> for row in rows: print row.id, row.myfield
+# -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# after defining tables, uncomment below to enable auditing
+# -------------------------------------------------------------------------
+# auth.enable_record_versioning(db)

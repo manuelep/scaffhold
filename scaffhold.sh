@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-: s'
+: '
 
 1. Clone a web2py repository
 2. Checkout to the desidered version
@@ -19,6 +19,7 @@
 version="1.0"
 tag="R-2.18.5"
 clean="y"
+name="scaffhold"
 
 # Getting script options
 while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
@@ -45,7 +46,7 @@ if [[ "$1" == '--' ]]; then shift; fi
 SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 SRC="https://github.com/web2py/web2py.git"
-scaffhold="welcome"
+welcome="welcome"
 
 echo "1. [MSG] Cloning repo $SRC"
 git clone $SRC tmp
@@ -57,7 +58,7 @@ if [[ -n $tag ]]; then
     git checkout tags/$tag
 fi
 
-mv applications/$scaffhold ../
+mv applications/$welcome ../$name
 echo "[MSG] 3. Scaffhold application extracted"
 cd -
 if [[ $clean == "y" ]]; then
@@ -65,7 +66,7 @@ if [[ $clean == "y" ]]; then
 fi
 echo "[MSG] 3.1. Removed repo for filesystem cleaning purposes"
 
-cd $scaffhold
+cd $name
 git init
 git add .
 git commit -am "welcome $tag"
@@ -76,8 +77,8 @@ echo "[MSG] 7. New repository initialized"
 echo "[MSG] 5. and 6. From welcome to my scaffholding app"
 resources="$SCRIPT_PATH/resources"
 if [[ -d $resources ]]; then
-    rsync -av $resources/ $scaffhold/
-    cd $scaffhold
+    rsync -av $resources/ $name/
+    cd $name
     git add .
     git commit -am "scaffhold"
     git tag -a v0.0.2 -m "scaffhold"
@@ -91,9 +92,4 @@ if [[ -d $resources ]]; then
     cd -
 else
     echo "[WARNING] $resources NOT found"
-fi
-
-if [[ -n $name ]]; then
-    echo "[MSG] Renaming project to $name"
-    mv $scaffhold $name
 fi
