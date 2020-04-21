@@ -21,10 +21,22 @@ tag="R-2.18.5"
 clean="y"
 name="scaffhold"
 
+Help() {
+    # Display Help
+    echo "-V --version : Prints the script version and exit;"
+    echo "-h --help : Prints this help and exit;"
+    echo "-t --tag [TAG] : The tag name of network checkout (default: $tag);"
+    echo "-n --name [NAME] : The name of the resulting application (default: %name);"
+    echo "-r --repo [URL] : URL of the repo destination (OPTIONAL);"
+}
+
 # Getting script options
 while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
   -V | --version )
-    echo $version
+    echo "Script version: $version"
+    exit ;;
+  -h | --help )
+    Help
     exit
     ;;
   -t | --tag )
@@ -39,6 +51,9 @@ while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
   -r | --repo )
     repo=$1
     ;;
+  * )
+    echo "ERROR! Invalid option: $1"
+    exit ;;
 esac; shift; done
 if [[ "$1" == '--' ]]; then shift; fi
 
